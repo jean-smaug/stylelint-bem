@@ -1,12 +1,12 @@
 /* eslint complexity:off */
-'use strict';
+"use strict";
 // @see https://github.com/stylelint/stylelint/blob/master/docs/developer-guide/plugins.md
-const stylelint = require('stylelint');
-const resolvedNestedSelector = require('postcss-resolve-nested-selector');
-const extractCssClasses = require('css-selector-classes');
-const util = require('util');
+const stylelint = require("stylelint");
+const resolvedNestedSelector = require("postcss-resolve-nested-selector");
+const extractCssClasses = require("css-selector-classes");
+const util = require("util");
 
-const ruleName = 'plugin/stylelint-bem-namics';
+const ruleName = "plugin/stylelint-bem-namics";
 const messages = stylelint.utils.ruleMessages(ruleName, {
 	expected: function expected(selector, expectedSelector) {
 		return `Expected class name "${selector}" to ${expectedSelector}.`;
@@ -17,24 +17,18 @@ const addNamespace = util.deprecate((namespace, namespaces) => {
 	if (!namespaces.includes(namespace)) {
 		namespaces.push(namespace);
 	}
-}, 'Using the "namespace" option of @namics/stylelint-bem is deprecated. ' +
-'Please use the new namespaces option which allows using multiple namespaces');
+}, 'Using the "namespace" option of @namics/stylelint-bem is deprecated. ' + "Please use the new namespaces option which allows using multiple namespaces");
 
 module.exports = stylelint.createPlugin(ruleName, (options) => {
-	options = options || '';
+	options = options || "";
 
-	const validPatternPrefixes = Array.isArray(options.patternPrefixes) ? options.patternPrefixes : [
-		'a',
-		'm',
-		'o',
-		'l',
-		'g',
-		'h',
-	];
+	const validPatternPrefixes = Array.isArray(options.patternPrefixes)
+		? options.patternPrefixes
+		: ["a", "m", "o", "l", "g", "h"];
 
-	const validHelperPrefixes = Array.isArray(options.helperPrefixes) ? options.helperPrefixes : [
-		'state',
-	];
+	const validHelperPrefixes = Array.isArray(options.helperPrefixes)
+		? options.helperPrefixes
+		: ["state"];
 
 	const validPrefixes = []
 		.concat(validPatternPrefixes)
@@ -64,13 +58,13 @@ module.exports = stylelint.createPlugin(ruleName, (options) => {
 			className = className.substr(namespace.length);
 		}
 		// Handle className with helper prefixes
-		const helperPrefix = className.split('-')[0];
+		const helperPrefix = className.split("-")[0];
 		if (validHelperPrefixes.indexOf(helperPrefix) !== -1) {
 			result.helper = helperPrefix;
 			className = className.substr(helperPrefix.length + 1);
 		}
 		// Handle classNames with prefixes
-		const patternPrefix = className.split('-')[0];
+		const patternPrefix = className.split("-")[0];
 		if (validPatternPrefixes.indexOf(patternPrefix) !== -1) {
 			result.pattern = patternPrefix;
 			className = className.substr(patternPrefix.length + 1);
@@ -90,23 +84,23 @@ module.exports = stylelint.createPlugin(ruleName, (options) => {
 	function getValidSyntax(className, namespaces) {
 		const parsedClassName = parseClassName(className, namespaces);
 		// Try to guess the namespaces or use the first one
-		let validSyntax = parsedClassName.namespace || namespaces[0] || '';
+		let validSyntax = parsedClassName.namespace || namespaces[0] || "";
 		if (parsedClassName.helper) {
 			validSyntax += `${parsedClassName.helper}-`;
 		}
 		if (parsedClassName.pattern) {
 			validSyntax += `${parsedClassName.pattern}-`;
 		} else if (validPatternPrefixes.length) {
-			validSyntax += '[prefix]-';
+			validSyntax += "[prefix]-";
 		}
-		validSyntax += '[block]';
-		if (className.indexOf('__') !== -1) {
-			validSyntax += '__[element]';
+		validSyntax += "[block]";
+		if (className.indexOf("__") !== -1) {
+			validSyntax += "__[element]";
 		}
 		if (validHelperPrefixes.indexOf(parsedClassName.helper) !== -1) {
 			validSyntax += `--[${parsedClassName.helper}]`;
-		} else if (className.indexOf('--') !== -1) {
-			validSyntax += '--[modifier]';
+		} else if (className.indexOf("--") !== -1) {
+			validSyntax += "--[modifier]";
 		}
 		return validSyntax;
 	}
@@ -118,13 +112,10 @@ module.exports = stylelint.createPlugin(ruleName, (options) => {
 	 * @returns {string} error message
 	 */
 	function getClassNameErrors(className, namespaces) {
-
-		if ((/[A-Z]/).test(className)) {
-			return 'contain no uppercase letters';
-		}
-
 		const parsedClassName = parseClassName(className, namespaces);
-		const isAnyNamespaceUsed = namespaces.some((namespace) => parsedClassName.namespace === namespace);
+		const isAnyNamespaceUsed = namespaces.some(
+			(namespace) => parsedClassName.namespace === namespace
+		);
 		if (namespaces.length && !isAnyNamespaceUsed) {
 			return namespaces.length > 1
 				? `use one of the valid namespaces "${namespaces.join('", "')}"`
@@ -133,46 +124,58 @@ module.exports = stylelint.createPlugin(ruleName, (options) => {
 
 		// Valid helper but invalid pattern prefix
 		// e.g. 'state-zz-button'
-		if (validPatternPrefixes.length && parsedClassName.helper && !parsedClassName.pattern) {
+		if (
+			validPatternPrefixes.length &&
+			parsedClassName.helper &&
+			!parsedClassName.pattern
+		) {
 			// Try to guess the namespace
-			const namespace = parsedClassName.namespace || namespaces[0] || '';
+			const namespace = parsedClassName.namespace || namespaces[0] || "";
 			const validPrefixExamples = validPatternPrefixes
-				.map((prefix) => `"${namespace}${parsedClassName.helper}-${prefix}-"`)
-				.join(', ');
-			return `use the ${getValidSyntax(className, namespaces)} syntax. ` +
-				`Valid ${parsedClassName.helper} prefixes: ${validPrefixExamples}`;
+				.map(
+					(prefix) =>
+						`"${namespace}${parsedClassName.helper}-${prefix}-"`
+				)
+				.join(", ");
+			return (
+				`use the ${getValidSyntax(className, namespaces)} syntax. ` +
+				`Valid ${parsedClassName.helper} prefixes: ${validPrefixExamples}`
+			);
 		}
 
 		// Invalid pattern prefix
 		if (validPatternPrefixes.length && !parsedClassName.pattern) {
 			// Try to guess the namespace
-			const namespace = parsedClassName.namespace || namespaces[0] || '';
+			const namespace = parsedClassName.namespace || namespaces[0] || "";
 			const validPrefixExamples = validPrefixes
 				.map((prefix) => `"${namespace}${prefix}-"`)
-				.join(', ');
+				.join(", ");
 			return `start with a valid prefix: ${validPrefixExamples}`;
 		}
 
-		if (!((/^[a-z]/).test(parsedClassName.name))) {
+		if (!/^[a-z]/.test(parsedClassName.name)) {
 			return `use the ${getValidSyntax(className, namespaces)} syntax`;
 		}
-		if ((/___/).test(parsedClassName.name)) {
+		if (/___/.test(parsedClassName.name)) {
 			return 'use only two "_" as element separator';
 		}
-		if ((/--.*__/).test(parsedClassName.name)) {
+		if (/--.*__/.test(parsedClassName.name)) {
 			return `use the ${getValidSyntax(className, namespaces)} syntax`;
 		}
-		if ((/--(-|.*--)/).test(parsedClassName.name)) {
+		if (/--(-|.*--)/.test(parsedClassName.name)) {
 			return 'use only one "--" modifier separator';
 		}
-		if ((/(^|[^_])_([^_]|$)/).test(parsedClassName.name)) {
+		if (/(^|[^_])_([^_]|$)/.test(parsedClassName.name)) {
 			return 'use "_" only as element separator';
 		}
 		// disallow hyphens at start and end of block parts
-		if (parsedClassName.parts.some((elem) => (/^(-.*|.*-)$/).test(elem))) {
+		if (parsedClassName.parts.some((elem) => /^(-.*|.*-)$/.test(elem))) {
 			return 'use "-" only for composite names';
 		}
-		if (parsedClassName.helper && parsedClassName.name.indexOf('--') === -1) {
+		if (
+			parsedClassName.helper &&
+			parsedClassName.name.indexOf("--") === -1
+		) {
 			return `use the ${getValidSyntax(className, namespaces)} syntax`;
 		}
 	}
@@ -199,45 +202,62 @@ module.exports = stylelint.createPlugin(ruleName, (options) => {
 		const classNameErrorCache = {};
 		root.walkRules((rule) => {
 			// Skip keyframes
-			if (rule.parent.name === 'keyframes') {
+			if (rule.parent.name === "keyframes") {
 				return;
 			}
 			rule.selectors.forEach((selector) => {
-				if (selector.startsWith('%')) {
+				if (selector.startsWith("%")) {
 					// Skip scss placeholders
 					return;
 				}
-				if (selector.indexOf('(') !== -1 && (selector.indexOf(':') === -1 || selector.indexOf('@') !== -1)) {
+				if (
+					selector.indexOf("(") !== -1 &&
+					(selector.indexOf(":") === -1 ||
+						selector.indexOf("@") !== -1)
+				) {
 					// Skip less mixins
 					return;
 				}
-				resolvedNestedSelector(selector, rule).forEach((resolvedSelector) => {
-					let classNames = [];
-					try {
-						// Remove ampersand from inner sass mixins and parse the class names
-						classNames = extractCssClasses(resolvedSelector.replace(/&\s*/ig, ''));
-					} catch (e) {
-						stylelint.utils.report({
-							ruleName,
-							result,
-							node: rule,
-							message: e.message,
-						});
-					}
-					classNames.forEach((className) => {
-						if (classNameErrorCache[className] === undefined) {
-							classNameErrorCache[className] = getClassNameErrors(className, namespaces, rule);
-						}
-						if (classNameErrorCache[className]) {
+				resolvedNestedSelector(selector, rule).forEach(
+					(resolvedSelector) => {
+						let classNames = [];
+						try {
+							// Remove ampersand from inner sass mixins and parse the class names
+							classNames = extractCssClasses(
+								resolvedSelector.replace(/&\s*/gi, "")
+							);
+						} catch (e) {
 							stylelint.utils.report({
 								ruleName,
 								result,
 								node: rule,
-								message: messages.expected(className, classNameErrorCache[className]),
+								message: e.message,
 							});
 						}
-					});
-				});
+						classNames.forEach((className) => {
+							if (classNameErrorCache[className] === undefined) {
+								classNameErrorCache[
+									className
+								] = getClassNameErrors(
+									className,
+									namespaces,
+									rule
+								);
+							}
+							if (classNameErrorCache[className]) {
+								stylelint.utils.report({
+									ruleName,
+									result,
+									node: rule,
+									message: messages.expected(
+										className,
+										classNameErrorCache[className]
+									),
+								});
+							}
+						});
+					}
+				);
 			});
 		});
 	};
