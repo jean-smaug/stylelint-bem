@@ -153,7 +153,7 @@ module.exports = stylelint.createPlugin(ruleName, (options) => {
 			return `start with a valid prefix: ${validPrefixExamples}`;
 		}
 
-		if (!/^[a-z]/.test(parsedClassName.name)) {
+		if (!/^[a-zA-Z]/.test(parsedClassName.name)) {
 			return `use the ${getValidSyntax(className, namespaces)} syntax`;
 		}
 		if (/___/.test(parsedClassName.name)) {
